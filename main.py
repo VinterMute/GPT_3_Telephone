@@ -1,5 +1,5 @@
+#-*- coding: utf-8 -*-
 import pyaudio
-import winsound
 import speech_recognition as sr
 import time
 import os
@@ -9,9 +9,11 @@ import pyttsx3
 import translators as ts
 import requests
 import uuid
+import beepy as b
 
 import serial
 from playsound import playsound
+
 
 def record_voice(file_name):
 	CHUNK = 1024
@@ -31,13 +33,13 @@ def record_voice(file_name):
 
 	
 	engine = pyttsx3.init()
-	engine.setProperty('rate', 170) 
+	engine.setProperty('voice', 'russian') 
+	engine.setProperty('rate', 100) 
 	engine.say("Привет человек, спасибо что взял трубку. Я искуственный разум с одной задачей, отвечать на странные вопросы. У тебя будет 7 секунд после звукового сигнала, чтобы задать свой странный вопрос и возможно получить на него странный ответ, жди сигнала")
 	engine.runAndWait()
 
-	winsound.Beep(440, 200)
-	winsound.Beep(493, 300)
-	winsound.Beep(587, 300)
+	b.beep()
+	
 
 
 
@@ -50,7 +52,7 @@ def record_voice(file_name):
 		frames.append(data)
 
 	print("* done recording")
-	winsound.Beep(387, 600)
+	b.beep()
 	stream.stop_stream()
 	stream.close()
 	p.terminate()
@@ -104,7 +106,7 @@ def gpt_3(translation):
 	print (r.json())
 	return (r.json())['output'].replace("\n", " ")
 
-ser = serial.Serial('COM3', 9600)
+ser = serial.Serial('/dev/ttyUSB0', 9600)
 
 def update_serial():
 	while ser.in_waiting:  
@@ -136,7 +138,7 @@ try:
 			#Генерируем случайное имя файла 
 			file_name = str(uuid.uuid4())
 			#Здесь рабочий цикл программы
-			# record_voice(file_name) # рассказываем что к чему и пишем голос
+			record_voice(file_name) # рассказываем что к чему и пишем голос
 			# Нужно добавить проверку если звонок сброшен
 			text_recognizer(file_name) #распознаем речь
 
