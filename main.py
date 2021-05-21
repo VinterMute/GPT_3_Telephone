@@ -1,5 +1,6 @@
+#_*_ coding: utf-8 _*_
 import pyaudio
-import winsound
+
 import speech_recognition as sr
 import time
 import os
@@ -12,60 +13,37 @@ import uuid
 import beepy as b 
 import serial
 from playsound import playsound
+from gtts import gTTS
 
 def record_voice(file_name):
-	CHUNK = 1024
-	FORMAT = pyaudio.paInt16
-	CHANNELS = 2
-	RATE = 44100
+	
 	RECORD_SECONDS = 7
-	WAVE_OUTPUT_FILENAME = "voices/" + file_name + ".wav"
-
-	p = pyaudio.PyAudio()
-
-	stream = p.open(format=FORMAT,
-					channels=CHANNELS,
-					rate=RATE,
-					input=True,
-					frames_per_buffer=CHUNK)
+	
 
 	
 	engine = pyttsx3.init()
-	engine.setProperty('rate', 200) 
+	engine.setProperty('rate', 150) 
+	engine.setProperty("voice",'russian')
 	engine.say("Этот звонок спецально для тебя!")
 	engine.runAndWait()
-	engine.say("Эта жизнь только для тебя")
+	engine.say("Этот праздник только для тебя")
 	engine.runAndWait()
-	engine.say("Привет на связи паукообразная коза, задай странный вопрос за 7 сек после сигнала  и получи странный ответ  ")
+	engine.say("Привет, я робот-секретарь паукообразной козы, задай странный вопрос за 7 сек после сигнала  и получи странный ответ от Козы  ")
 	engine.runAndWait()
 
 	b.beep()
 	
-
-
 	print("* recording")
+	os.system("arecord --device=hw:0,0 --format S16_LE -c 2  --rate 48000 -d " + str(RECORD_SECONDS)+ " voices/" + file_name + ".wav")
 
-	frames = []
-
-	for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
-		data = stream.read(CHUNK)
-		frames.append(data)
+	
 
 	print("* done recording")
 	b.beep(8)
-	stream.stop_stream()
-	stream.close()
-	p.terminate()
+	
 
-	engine.say("Все внимательно записала, дай-ка подумать")
+	engine.say("Все внимательно записал, отправляю Козе")
 	engine.runAndWait()
-
-	wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
-	wf.setnchannels(CHANNELS)
-	wf.setsampwidth(p.get_sample_size(FORMAT))
-	wf.setframerate(RATE)
-	wf.writeframes(b''.join(frames))
-	wf.close()
 	return 0
 
 text =''
@@ -106,7 +84,7 @@ def gpt_3(translation):
 	print (r.json())
 	return (r.json())['output'].replace("\n", " ")
 
-ser = serial.Serial('COM3', 9600)
+ser = serial.Serial('/dev/ttyUSB0', 9600)
 
 def update_serial():
 	while ser.in_waiting:  
@@ -148,20 +126,30 @@ while True:
 				
 
 
-				translation = ts.google(text,from_language='ru', to_language='en',sleep_seconds = 5,if_use_cn_host=True)
+				translation = ts.google(text,from_language='ru', to_language='en',sleep_seconds = 1,if_use_cn_host=True)
 				print("Перевод = "+ translation)
-				engine.say("кажись я поняла тебя")
+				engine.say("Сейчас все будет, одну минутку")
 				engine.runAndWait()
 
 
 				out = gpt_3(translation)
+				engine.say("Коза написала ответ")
+				engine.runAndWait()
 
-				predict = ts.google(out,from_language='en', to_language='ru',sleep_seconds = 5,if_use_cn_host=True)
+				predict = ts.google(out,from_language='en', to_language='ru',sleep_seconds = 1,if_use_cn_host=True)
+				engine.say("Принимаю ответ")
+				engine.runAndWait()
 
 				
-				engine.say(predict)
+				#engine.say(predict)
+				#engine.runAndWait()
+				tts = gTTS(text = predict, lang ='ru')
+				tts.save("out_from_google.mp3")
+				engine.say("Включаю сообщение от козы")
 				engine.runAndWait()
-				engine.say("Это все что я хотел сказать, понимай как хочешь, пока-пока ")
+				playsound('out_from_google.mp3')
+
+				engine.say("Это все что сказала Коза, понимай как хочешь, пока-пока ")
 				engine.runAndWait()
 				time.sleep(10)
 
