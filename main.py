@@ -9,7 +9,7 @@ import pyttsx3
 import translators as ts
 import requests
 import uuid
-
+import beepy as b 
 import serial
 from playsound import playsound
 
@@ -31,14 +31,16 @@ def record_voice(file_name):
 
 	
 	engine = pyttsx3.init()
-	engine.setProperty('rate', 170) 
-	engine.say("Привет человек, спасибо что взял трубку. Я искуственный разум с одной задачей, отвечать на странные вопросы. У тебя будет 7 секунд после звукового сигнала, чтобы задать свой странный вопрос и возможно получить на него странный ответ, жди сигнала")
+	engine.setProperty('rate', 200) 
+	engine.say("Этот звонок спецально для тебя!")
+	engine.runAndWait()
+	engine.say("Эта жизнь только для тебя")
+	engine.runAndWait()
+	engine.say("Привет на связи паукообразная коза, задай странный вопрос за 7 сек после сигнала  и получи странный ответ  ")
 	engine.runAndWait()
 
-	winsound.Beep(440, 200)
-	winsound.Beep(493, 300)
-	winsound.Beep(587, 300)
-
+	b.beep()
+	
 
 
 	print("* recording")
@@ -50,12 +52,12 @@ def record_voice(file_name):
 		frames.append(data)
 
 	print("* done recording")
-	winsound.Beep(387, 600)
+	b.beep(8)
 	stream.stop_stream()
 	stream.close()
 	p.terminate()
 
-	engine.say("Все внимательно записал, дай-ка подумать")
+	engine.say("Все внимательно записала, дай-ка подумать")
 	engine.runAndWait()
 
 	wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
@@ -76,18 +78,18 @@ def text_recognizer(file_name):
 		global text
 		text = r.recognize_google(audio, language = "ru-RU")
 		print(text)
-	except sr.UnknownValueError:
-		print("Непоняточка номер "+ str(i))
-
+	except sr.UnknownValueError as e:
+		print("Непоняточка номер")
 		engine = pyttsx3.init()
-		engine.setProperty('rate', 170) 
-		engine.say("Хм, какие-то проблемы с распознованием текста")
+		engine.setProperty('rate', 200) 
+		engine.say("Хм, какие-то проблемы с распознованием текста. Говори громче!")
 		engine.runAndWait()
+		raise e
 	except sr.RequestError as e:
 		print("Ошибка сервиса; {0}".format(e))
 
 		engine = pyttsx3.init()
-		engine.setProperty('rate', 170) 
+		engine.setProperty('rate', 200) 
 		engine.say("Хм, какие-то проблемы с сервисом распознования")
 		engine.runAndWait()
 	return 0
@@ -121,48 +123,56 @@ def update_serial():
   #Основной цикл программы  
 motion = 0
 button = 0
-try:
-	while True:
-		
+while True:
+	try:
+		while True:
+			
 
-		update_serial()
-		if motion == 1 and button == 0  : # Звонилка
-			playsound('ring.mp3')
-			motion = 0
+			update_serial()
+			if motion == 1 and button == 0  : # Звонилка
+				playsound('ring.mp3')
+				motion = 0
 
-		#Кто то снял трубку 
-		if button == 1 :
-			playsound('up.mp3')
-			#Генерируем случайное имя файла 
-			file_name = str(uuid.uuid4())
-			#Здесь рабочий цикл программы
-			# record_voice(file_name) # рассказываем что к чему и пишем голос
-			# Нужно добавить проверку если звонок сброшен
-			text_recognizer(file_name) #распознаем речь
+			#Кто то снял трубку 
+			if button == 1 :
+				playsound('up.mp3')
+				#Генерируем случайное имя файла 
+				file_name = str(uuid.uuid4())
+				engine = pyttsx3.init()
+				engine.setProperty('rate', 200) 
 
-			translation = ts.google(text,from_language='ru', to_language='en',sleep_seconds = 5,if_use_cn_host=True)
-			print("Перевод = "+ translation)
-
-			out = gpt_3(translation)
-
-			predict = ts.google(out,from_language='en', to_language='ru',sleep_seconds = 5,if_use_cn_host=True)
-
-			engine = pyttsx3.init()
-			engine.setProperty('rate', 200) 
-			engine.say(predict)
-			engine.runAndWait()
-			engine.say("Это все что я хотел сказать, понимай как хочешь, пока-пока ")
-			engine.runAndWait()
-			time.sleep(10)
+				#Здесь рабочий цикл программы
+				record_voice(file_name) # рассказываем что к чему и пишем голос
+				# Нужно добавить проверку если звонок сброшен
+				text_recognizer(file_name) #распознаем речь
+				
 
 
-			#Делаем цикл что бы положили трубку
-			while True:
-				update_serial()
-				if button == 0:
-					print("Один цикл завершен")
-					break
+				translation = ts.google(text,from_language='ru', to_language='en',sleep_seconds = 5,if_use_cn_host=True)
+				print("Перевод = "+ translation)
+				engine.say("кажись я поняла тебя")
+				engine.runAndWait()
 
 
-except Exception as e:
-	raise e
+				out = gpt_3(translation)
+
+				predict = ts.google(out,from_language='en', to_language='ru',sleep_seconds = 5,if_use_cn_host=True)
+
+				
+				engine.say(predict)
+				engine.runAndWait()
+				engine.say("Это все что я хотел сказать, понимай как хочешь, пока-пока ")
+				engine.runAndWait()
+				time.sleep(10)
+
+
+				#Делаем цикл что бы положили трубку
+				while True:
+					update_serial()
+					if button == 0:
+						print("Один цикл завершен")
+						break
+
+
+	except Exception as e:
+		print(e)
