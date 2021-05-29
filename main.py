@@ -109,6 +109,8 @@ while True:
 
 				p = multiprocessing.Process(target=playsound, args=("wait.mp3",))
 				p.start()#Запустил музыку для ожидания
+				print("Включаю музыкуожидания")
+
 
 
 
