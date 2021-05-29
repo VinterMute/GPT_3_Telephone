@@ -14,6 +14,7 @@ import beepy as b
 import serial
 from playsound import playsound
 from gtts import gTTS
+import multiprocessing
 
 def record_voice(file_name):
 	
@@ -21,15 +22,8 @@ def record_voice(file_name):
 	
 
 	
-	engine = pyttsx3.init()
-	engine.setProperty('rate', 150) 
-	engine.setProperty("voice",'russian')
-	engine.say("Этот звонок спецально для тебя!")
-	engine.runAndWait()
-	engine.say("Этот праздник только для тебя")
-	engine.runAndWait()
-	engine.say("Привет, я робот-секретарь паукообразной козы, задай странный вопрос за 7 сек после сигнала  и получи странный ответ от Козы  ")
-	engine.runAndWait()
+	playsound("voice_speech/0.mp3")
+	playsound("voice_speech/1.mp3")
 
 	b.beep()
 	
@@ -42,8 +36,8 @@ def record_voice(file_name):
 	b.beep(8)
 	
 
-	engine.say("Все внимательно записал, отправляю Козе")
-	engine.runAndWait()
+	playsound("voice_speech/2.mp3")#Поняла тебя дайка подумать минутку
+	
 	return 0
 
 text =''
@@ -58,18 +52,11 @@ def text_recognizer(file_name):
 		print(text)
 	except sr.UnknownValueError as e:
 		print("Непоняточка номер")
-		engine = pyttsx3.init()
-		engine.setProperty('rate', 200) 
-		engine.say("Хм, какие-то проблемы с распознованием текста. Говори громче!")
-		engine.runAndWait()
+		playsound("voice_speech/4.mp3")
 		raise e
 	except sr.RequestError as e:
 		print("Ошибка сервиса; {0}".format(e))
-
-		engine = pyttsx3.init()
-		engine.setProperty('rate', 200) 
-		engine.say("Хм, какие-то проблемы с сервисом распознования")
-		engine.runAndWait()
+		playsound("voice_speech/5.mp3")
 	return 0
 
 
@@ -116,11 +103,15 @@ while True:
 				playsound('up.mp3')
 				#Генерируем случайное имя файла 
 				file_name = str(uuid.uuid4())
-				engine = pyttsx3.init()
-				engine.setProperty('rate', 200) 
 
 				#Здесь рабочий цикл программы
 				record_voice(file_name) # рассказываем что к чему и пишем голос
+
+				p = multiprocessing.Process(target=playsound, args=("wait.mp3",))
+				p.start()#Запустил музыку для ожидания
+
+
+
 				# Нужно добавить проверку если звонок сброшен
 				text_recognizer(file_name) #распознаем речь
 				
@@ -128,29 +119,30 @@ while True:
 
 				translation = ts.google(text,from_language='ru', to_language='en',sleep_seconds = 1,if_use_cn_host=True)
 				print("Перевод = "+ translation)
-				engine.say("Сейчас все будет, одну минутку")
-				engine.runAndWait()
-
+				
 
 				out = gpt_3(translation)
-				engine.say("Коза написала ответ")
-				engine.runAndWait()
+				print("Ответ получен")
+				
 
 				predict = ts.google(out,from_language='en', to_language='ru',sleep_seconds = 1,if_use_cn_host=True)
-				engine.say("Принимаю ответ")
-				engine.runAndWait()
+				print("Перевожу ответ")
+				
+
+
 
 				
 				#engine.say(predict)
 				#engine.runAndWait()
 				tts = gTTS(text = predict, lang ='ru')
 				tts.save("out_from_google.mp3")
-				engine.say("Включаю сообщение от козы")
-				engine.runAndWait()
-				playsound('out_from_google.mp3')
 
-				engine.say("Это все что сказала Коза, понимай как хочешь, пока-пока ")
-				engine.runAndWait()
+				p.terminate() # Торможу музыку ожидания
+
+
+				playsound('out_from_google.mp3')
+				playsound('voice_speech/3.mp3')
+
 				time.sleep(10)
 
 
